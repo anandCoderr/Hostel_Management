@@ -10,18 +10,32 @@ const userSchema = new mongoose.Schema(
     phoneNumber: {
       type: String,
       required: true,
+      unique: true,
     },
     email: {
       type: String,
       required: true,
+      unique: true,
     },
     password: {
       type: String,
       required: true,
     },
     profilePicture: {
-      type: {},
+      type: String,
+      default: "",
     },
+    // profilePicture: {
+    //   type: [
+    //     {
+    //       image: {
+    //         type: String,
+    //       },
+    //     },
+    //   ],
+
+    //   default: [],
+    // },
     status: {
       type: Boolean,
       default: false,
