@@ -1,7 +1,10 @@
 import userModel from "../Model/UserModel.js";
 import MenuModel from "../Model/AdminModel.js";
+import OtpModel from "../Model/tempOtp.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+
+import { nodeMailerOtpHelper } from "../Utils/nodeMailer.js";
 
 import {
   successHelper,
@@ -79,6 +82,7 @@ export const register = async (req, res) => {
 
 export const userLogin = async (req, res) => {
   const { email, password } = req.body;
+  console.log("req.body", req.body);
 
   const rules = {
     email: "required",
@@ -125,21 +129,70 @@ export const userLogin = async (req, res) => {
       });
     }
 
-    // const isValidUser = await userModel.findOne({
-    //   email,
-    //   password: passwordBcryptResponse,
-    // });
+    // -----random otp is Created
+    const otp = Math.ceil(100000 + Math.random() * 900000);
 
-    // console.log("isValidUser response:--->", isValidUser);
+    await nodeMailerOtpHelper(
+      email,
+      "Your Temp Otp",
+      `This is your Login Verification Otp ${otp}`
+    );
+
+    // console.log("otpResp:---->", otpResp);
+
+    await OtpModel.findOneAndUpdate(
+      { email },
+      {
+        otp,
+      },
+      {
+        upsert: true,
+        new: true,
+      }
+    );
+
+    return successHelper(res, "Otp sent Successful", 200);
+  } catch (error) {
+    return errorHelper(res, error);
+  }
+};
+
+// -------otp verification
+
+export const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    const rules = {
+      email: "required",
+      otp: "required",
+    };
+
+    const validatorResponse = await inputValidator(req.body, rules);
+
+    if (!validatorResponse.success) {
+      return errorHelper(res, validatorResponse.errors);
+    }
+
+    const otpResponse = await OtpModel.findOne({
+      email,
+      otp,
+    });
+
+    if (!otpResponse) {
+      return errorHelper(res, { status: 422, message: "Otp is not valid" });
+    }
+
+    const userSignedUser = await userModel.findOne({ email });
 
     const jwtResponse = await jwt.sign(
-      { userId: userCheckResponse._id },
+      { userId: userSignedUser._id },
       process.env.PRIVATE_KEY
     );
 
-    return successHelper(res, "Logged in Successful", 201, {
-      data: userCheckResponse,
-      jwtToken: jwtResponse,
+    return successHelper(res, "Otp has verified successfully", 200, {
+      data: userSignedUser,
+      jwt: jwtResponse,
     });
   } catch (error) {
     return errorHelper(res, error);
