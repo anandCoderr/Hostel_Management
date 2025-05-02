@@ -1,13 +1,18 @@
-import { register } from "../Controllers/userController.js";
+import { register, userLogin } from "../Controllers/userController.js";
 import express from "express";
 import uploadAny from "../Helper/imgUploadHelper.js";
+import { getMenu } from "../Controllers/userController.js";
 
 const route = express.Router();
 
+// -----------post route
+
 route.post("/create-user", uploadAny.single("profilePicture"), register);
 
-// route.post("/create-user", uploadAny.array("profilePicture", 5), register);
+route.post("/user-login", userLogin);
 
-// route.post("/create-user", register);
+// -------------- get requests
+
+route.get("/get-meal", getMenu);
 
 export default route;

@@ -9,7 +9,7 @@ const successHelper = (res, message = "Success", status = 200, data = {}) => {
 };
 
 const errorHelper = (res, error) => {
-  const status = error.status || error.statusCode || 421;
+  const status = error.status || error.statusCode || 422;
   const message = error.message || "Server Error";
 
   return res.status(status).json({
