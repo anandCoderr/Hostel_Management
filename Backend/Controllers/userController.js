@@ -1,8 +1,10 @@
 import userModel from "../Model/UserModel.js";
 import MenuModel from "../Model/AdminModel.js";
+import likeDislikeModel from "../Model/LikeAndDislikeModel.js";
 import OtpModel from "../Model/tempOtp.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 import { nodeMailerOtpHelper } from "../Utils/nodeMailer.js";
 
@@ -151,7 +153,9 @@ export const userLogin = async (req, res) => {
       }
     );
 
-    return successHelper(res, "Otp sent Successful", 200);
+    return successHelper(res, "Otp sent Successful", 200, {
+      otp,
+    });
   } catch (error) {
     return errorHelper(res, error);
   }
@@ -203,10 +207,79 @@ export const verifyOtp = async (req, res) => {
 
 export const getMenu = async (req, res) => {
   try {
-    const findResponse = await MenuModel.find({});
+    // for selected item from menu
+
+    const { id, day } = req.query;
+
+    const query = {};
+
+    if (id) {
+      query._id = new mongoose.Types.ObjectId(id);
+    }
+
+    if (day) {
+      query.day = day;
+    }
+
+    const findResponse = await MenuModel.find(query);
 
     return successHelper(res, "Your data", 200, findResponse);
   } catch (error) {
     return errorHelper(res, error);
   }
 };
+
+// -------like and dislike menu
+
+export const likeAndDislikeFun = async (req, res) => {
+  try {
+    const { userId, menuId } = req.body;
+
+    const rules = {
+      userId: "required",
+      menuId: "required",
+    };
+
+    const validatorResponse = await inputValidator(req.body, rules);
+
+    if (!validatorResponse.success) {
+      return errorHelper(res, validatorResponse.errors);
+    }
+
+    const likeDislikeCheckUserResponse =
+      await likeDislikeModel.findOneAndDelete({
+        userId,
+        menuId,
+      });
+
+    if (likeDislikeCheckUserResponse) {
+      const dislikeResponse = await MenuModel.findByIdAndUpdate(
+        { _id: menuId },
+        { $inc: { likeAndDislike: -1 } },
+        {
+          new: true,
+        }
+      );
+      return successHelper(res, "Disliked", 200, dislikeResponse);
+    }
+
+    await likeDislikeModel.create({
+      userId,
+      menuId,
+    });
+
+    const likeResponse = await MenuModel.findByIdAndUpdate(
+      { _id: menuId },
+      { $inc: { likeAndDislike: 1 } },
+      {
+        new: true,
+      }
+    );
+
+    return successHelper(res, "Liked", 200, likeResponse);
+  } catch (error) {
+    return errorHelper(res, error);
+  }
+};
+
+// -----get liked user

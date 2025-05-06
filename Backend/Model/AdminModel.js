@@ -9,21 +9,37 @@ const foodItems = new mongoose.Schema({
   },
 });
 
-const menuSchema = new mongoose.Schema({
-  day: {
-    type: String,
-    enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"],
-    required: "true",
+const menuSchema = new mongoose.Schema(
+  {
+    day: {
+      type: String,
+      enum: [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+      ],
+      required: "true",
+    },
+    type: {
+      type: String,
+      enum: ["breakfast", "lunch", "evening_snacks", "dinner"],
+      required: true,
+    },
+    breakfast: {
+      type: [foodItems],
+    },
+    likeAndDislike: {
+      type: Number,
+      default: 0,
+    },
   },
-  type: {
-    type: String,
-    enum: ["breakfast", "lunch", "evening_snacks", "dinner"],
-    required: true,
-  },
-  breakfast: {
-    type: [foodItems],
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
 const MenuModel = mongoose.model("Menu", menuSchema);
 
